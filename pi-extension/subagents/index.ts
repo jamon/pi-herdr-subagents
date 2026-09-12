@@ -215,11 +215,16 @@ interface ListedAgentDefinition extends AgentDefinition {
 }
 
 /** Tools that are gated by `spawning: false` */
+const HERDR_SUBAGENT_TOOL = "herdr_subagent";
+const HERDR_SUBAGENT_INTERRUPT_TOOL = "herdr_subagent_interrupt";
+const HERDR_SUBAGENTS_LIST_TOOL = "herdr_subagents_list";
+const HERDR_SUBAGENT_RESUME_TOOL = "herdr_subagent_resume";
+
 const SPAWNING_TOOLS = new Set([
-  "subagent",
-  "subagent_interrupt",
-  "subagents_list",
-  "subagent_resume",
+  HERDR_SUBAGENT_TOOL,
+  HERDR_SUBAGENT_INTERRUPT_TOOL,
+  HERDR_SUBAGENTS_LIST_TOOL,
+  HERDR_SUBAGENT_RESUME_TOOL,
 ]);
 
 /**
@@ -1481,11 +1486,11 @@ export default function subagentsExtension(pi: ExtensionAPI) {
 
   const shouldRegister = (name: string) => !deniedTools.has(name);
 
-  // ── subagent tool ──
-  if (shouldRegister("subagent"))
+  // ── herdr_subagent tool ──
+  if (shouldRegister(HERDR_SUBAGENT_TOOL))
     pi.registerTool({
-      name: "subagent",
-      label: "Subagent",
+      name: HERDR_SUBAGENT_TOOL,
+      label: "Herdr Subagent",
       description:
         "Spawn a sub-agent in a dedicated terminal herdr pane. " +
         "This is a fire-and-forget async tool: the call returns immediately with only an acknowledgement. " +
@@ -1725,11 +1730,11 @@ export default function subagentsExtension(pi: ExtensionAPI) {
       },
     });
 
-  // ── subagent_interrupt tool ──
-  if (shouldRegister("subagent_interrupt"))
+  // ── herdr_subagent_interrupt tool ──
+  if (shouldRegister(HERDR_SUBAGENT_INTERRUPT_TOOL))
     pi.registerTool({
-      name: "subagent_interrupt",
-      label: "Interrupt Subagent",
+      name: HERDR_SUBAGENT_INTERRUPT_TOOL,
+      label: "Interrupt Herdr Subagent",
       description:
         "Send Escape to the active turn of a currently running Pi-backed subagent. " +
         "The child pane, session, watcher, and running entry remain alive; this returns only a local acknowledgement " +
@@ -1777,11 +1782,11 @@ export default function subagentsExtension(pi: ExtensionAPI) {
       },
     });
 
-  // ── subagents_list tool ──
-  if (shouldRegister("subagents_list"))
+  // ── herdr_subagents_list tool ──
+  if (shouldRegister(HERDR_SUBAGENTS_LIST_TOOL))
     pi.registerTool({
-      name: "subagents_list",
-      label: "List Subagents",
+      name: HERDR_SUBAGENTS_LIST_TOOL,
+      label: "List Herdr Subagents",
       description:
         "List all available subagent definitions. " +
         "Scans project-local .pi/agents/ and global ~/.pi/agent/agents/. " +
@@ -1833,11 +1838,11 @@ export default function subagentsExtension(pi: ExtensionAPI) {
 
 
 
-  // ── subagent_resume tool ──
-  if (shouldRegister("subagent_resume"))
+  // ── herdr_subagent_resume tool ──
+  if (shouldRegister(HERDR_SUBAGENT_RESUME_TOOL))
     pi.registerTool({
-      name: "subagent_resume",
-      label: "Resume Subagent",
+      name: HERDR_SUBAGENT_RESUME_TOOL,
+      label: "Resume Herdr Subagent",
       description:
         "Resume a previous sub-agent session in a new herdr pane. " +
         "This is a fire-and-forget async tool: the call returns immediately with only an acknowledgement. " +
