@@ -134,7 +134,9 @@ describe("Pi Harness Driver", () => {
     assert.ok(built.command.includes("pi --session '/tmp/sessions/subagent.jsonl'"));
     assert.ok(built.command.includes("--model 'anthropic/claude-sonnet-4-5'"));
     assert.ok(built.command.includes("--thinking 'high'"));
-    assert.ok(built.command.includes("echo '__SUBAGENT_DONE_'$?'__'"));
+    assert.ok(process.platform === "win32"
+      ? built.command.includes('Write-Output "__SUBAGENT_DONE_$($code)__"')
+      : built.command.includes("echo '__SUBAGENT_DONE_'$?'__'"));
   });
 });
 

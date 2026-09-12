@@ -33,8 +33,38 @@ function assertTerminalAvailable(): void {
   if (!isTerminalAvailable()) throw new Error(`herdr is not available. ${SETUP_HINT}`);
 }
 
+export function isWindowsShell(): boolean {
+  return process.platform === "win32";
+}
+
+export function scriptExtension(): ".ps1" | ".sh" {
+  return isWindowsShell() ? ".ps1" : ".sh";
+}
+
 export function shellQuote(value: string): string {
-  return "'" + value.replace(/'/g, "'\\''") + "'";
+  return isWindowsShell()
+    ? "'" + value.replace(/'/g, "''") + "'"
+    : "'" + value.replace(/'/g, "'\\''") + "'";
+}
+
+export function shellEnv(name: string, value: string): string {
+  return isWindowsShell() ? `$env:${name} = ${shellQuote(value)}` : `${name}=${shellQuote(value)}`;
+}
+
+export function shellCd(cwd?: string): string {
+  if (!cwd) return "";
+  return isWindowsShell() ? `Set-Location -LiteralPath ${shellQuote(cwd)}; ` : `cd ${shellQuote(cwd)} && `;
+}
+
+export function shellEnvPrefix(assignments: string[]): string {
+  if (assignments.length === 0) return "";
+  return isWindowsShell() ? `${assignments.join("; ")}; ` : `${assignments.join(" ")} `;
+}
+
+export function shellDoneTrailer(): string {
+  return isWindowsShell()
+    ? `; if ($null -eq $LASTEXITCODE) { $code = if ($?) { 0 } else { 1 } } else { $code = $LASTEXITCODE }; Write-Output "__SUBAGENT_DONE_$($code)__"`
+    : "; echo '__SUBAGENT_DONE_'$?'__'";
 }
 
 /** Create a new herdr tab and return its root pane ID. */
@@ -79,16 +109,18 @@ export function runScriptInPane(
     join(
       tmpdir(),
       "pi-herdr-subagent-scripts",
-      `cmd-${Date.now()}-${Math.random().toString(16).slice(2, 8)}.sh`,
+      `cmd-${Date.now()}-${Math.random().toString(16).slice(2, 8)}${scriptExtension()}`,
     );
   mkdirSync(dirname(scriptPath), { recursive: true });
 
-  const scriptLines = ["#!/bin/bash"];
+  const scriptLines = isWindowsShell() ? [] : ["#!/bin/bash"];
   if (options?.scriptPreamble) scriptLines.push(options.scriptPreamble.trimEnd());
   scriptLines.push(command);
   writeFileSync(scriptPath, `${scriptLines.join("\n")}\n`, { mode: 0o755 });
 
-  runInPane(paneId, `bash ${shellQuote(scriptPath)}`);
+  runInPane(paneId, isWindowsShell()
+    ? `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ${shellQuote(scriptPath)}`
+    : `bash ${shellQuote(scriptPath)}`);
   return scriptPath;
 }
 

@@ -20,6 +20,10 @@ import {
   closePane,
   interruptPane,
   shellQuote,
+  scriptExtension,
+  shellDoneTrailer,
+  shellEnv,
+  shellEnvPrefix,
   readPane,
   readPaneAsync,
   inspectPane,
@@ -1237,7 +1241,7 @@ async function launchSubagent(
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "subagent"}-${id}.sh`;
+    .replace(/^-|-$/g, "") || "subagent"}-${id}${scriptExtension()}`;
   const launchScriptFile = join(artifactDir, "subagent-scripts", launchScriptName);
 
   runScriptInPane(surface, built.command, {
@@ -1956,18 +1960,18 @@ export default function subagentsExtension(pi: ExtensionAPI) {
         // Build env prefix — propagate PI_CODING_AGENT_DIR for config isolation
         const resumeEnvParts: string[] = [];
         if (process.env.PI_CODING_AGENT_DIR) {
-          resumeEnvParts.push(`PI_CODING_AGENT_DIR=${shellQuote(process.env.PI_CODING_AGENT_DIR)}`);
+          resumeEnvParts.push(shellEnv("PI_CODING_AGENT_DIR", process.env.PI_CODING_AGENT_DIR));
         }
-        resumeEnvParts.push(`PI_SUBAGENT_NAME=${shellQuote(name)}`);
-        resumeEnvParts.push(`PI_SUBAGENT_SESSION=${shellQuote(params.sessionPath)}`);
-        resumeEnvParts.push(`PI_SUBAGENT_ID=${shellQuote(id)}`);
-        resumeEnvParts.push(`PI_SUBAGENT_ACTIVITY_FILE=${shellQuote(activityFile)}`);
+        resumeEnvParts.push(shellEnv("PI_SUBAGENT_NAME", name));
+        resumeEnvParts.push(shellEnv("PI_SUBAGENT_SESSION", params.sessionPath));
+        resumeEnvParts.push(shellEnv("PI_SUBAGENT_ID", id));
+        resumeEnvParts.push(shellEnv("PI_SUBAGENT_ACTIVITY_FILE", activityFile));
         if (autoExit) {
-          resumeEnvParts.push(`PI_SUBAGENT_AUTO_EXIT=1`);
+          resumeEnvParts.push(shellEnv("PI_SUBAGENT_AUTO_EXIT", "1"));
         }
-        const resumeEnvPrefix = resumeEnvParts.join(" ") + " ";
+        const resumeEnvPrefix = shellEnvPrefix(resumeEnvParts);
 
-        const command = `${resumeEnvPrefix}${parts.join(" ")}; echo '__SUBAGENT_DONE_'$?'__'`;
+        const command = `${resumeEnvPrefix}${parts.join(" ")}${shellDoneTrailer()}`;
         const launchScriptFile = join(
           artifactDir,
           "subagent-scripts",
@@ -1976,7 +1980,7 @@ export default function subagentsExtension(pi: ExtensionAPI) {
             .replace(/[^a-z0-9\s-]/g, "")
             .replace(/\s+/g, "-")
             .replace(/-+/g, "-")
-            .replace(/^-|-$/g, "") || "resume"}-resume-${Date.now()}.sh`,
+            .replace(/^-|-$/g, "") || "resume"}-resume-${Date.now()}${scriptExtension()}`,
         );
         runScriptInPane(surface, command, {
           scriptPath: launchScriptFile,

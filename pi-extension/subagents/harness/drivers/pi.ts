@@ -6,6 +6,7 @@ import type {
   BuiltHarnessCommand,
 } from "../types.ts";
 import type { ResolvedRuntimePlan } from "../../runtime-routing.ts";
+import { shellCd, shellDoneTrailer, shellEnv, shellEnvPrefix } from "../../terminal.ts";
 
 const SUBAGENT_CONTROL_TOOLS = ["caller_ping", "subagent_done"] as const;
 
@@ -116,26 +117,26 @@ export class PiHarnessDriver implements HarnessDriver {
 
     const envParts: string[] = [];
     if (localAgentDir && existsSync(localAgentDir)) {
-      envParts.push(`PI_CODING_AGENT_DIR=${shellQuote(localAgentDir)}`);
+      envParts.push(shellEnv("PI_CODING_AGENT_DIR", localAgentDir));
     } else if (process.env.PI_CODING_AGENT_DIR) {
-      envParts.push(`PI_CODING_AGENT_DIR=${shellQuote(process.env.PI_CODING_AGENT_DIR)}`);
+      envParts.push(shellEnv("PI_CODING_AGENT_DIR", process.env.PI_CODING_AGENT_DIR));
     }
 
     if (denySet && denySet.size > 0) {
-      envParts.push(`PI_DENY_TOOLS=${shellQuote([...denySet].join(","))}`);
+      envParts.push(shellEnv("PI_DENY_TOOLS", [...denySet].join(",")));
     }
-    envParts.push(`PI_SUBAGENT_NAME=${shellQuote(params.name)}`);
+    envParts.push(shellEnv("PI_SUBAGENT_NAME", params.name));
     if (params.agent) {
-      envParts.push(`PI_SUBAGENT_AGENT=${shellQuote(params.agent)}`);
+      envParts.push(shellEnv("PI_SUBAGENT_AGENT", params.agent));
     }
     if (effectiveAutoExit) {
-      envParts.push("PI_SUBAGENT_AUTO_EXIT=1");
+      envParts.push(shellEnv("PI_SUBAGENT_AUTO_EXIT", "1"));
     }
-    envParts.push(`PI_SUBAGENT_SESSION=${shellQuote(subagentSessionFile)}`);
-    envParts.push(`PI_SUBAGENT_ID=${shellQuote(params.id)}`);
+    envParts.push(shellEnv("PI_SUBAGENT_SESSION", subagentSessionFile));
+    envParts.push(shellEnv("PI_SUBAGENT_ID", params.id));
     const activityFile = join(artifactDir, `subagent-activity-${params.id}.json`);
-    envParts.push(`PI_SUBAGENT_ACTIVITY_FILE=${shellQuote(activityFile)}`);
-    envParts.push(`PI_SUBAGENT_SURFACE=${shellQuote(surface)}`);
+    envParts.push(shellEnv("PI_SUBAGENT_ACTIVITY_FILE", activityFile));
+    envParts.push(shellEnv("PI_SUBAGENT_SURFACE", surface));
 
     const fullTask = taskDelivery === "direct"
       ? params.task
@@ -169,9 +170,9 @@ export class PiHarnessDriver implements HarnessDriver {
       parts.push(shellQuote(promptArg));
     }
 
-    const envPrefix = envParts.length > 0 ? `${envParts.join(" ")} ` : "";
-    const cdPrefix = effectiveCwd ? `cd ${shellQuote(effectiveCwd)} && ` : "";
-    const command = `${cdPrefix}${envPrefix}${parts.join(" ")}; echo '__SUBAGENT_DONE_'$?'__'`;
+    const envPrefix = shellEnvPrefix(envParts);
+    const cdPrefix = shellCd(effectiveCwd);
+    const command = `${cdPrefix}${envPrefix}${parts.join(" ")}${shellDoneTrailer()}`;
 
     return {
       command,
